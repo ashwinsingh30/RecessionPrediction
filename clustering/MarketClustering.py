@@ -9,126 +9,19 @@ import nltk
 from dateutil.relativedelta import relativedelta
 
 
-def parseDate(date):
-    date = date.split("/")
-    m = date[1]
-    # if(int(m)<10):
-    #     m="0"+m
-    d = date[0]
-    y = date[2]
-    return datetime.datetime.strptime(m + d + y, "%d%m%Y").date()
-
-MAX_CLUSTER_ITERATIONS = 50
 
 
-def get_initial_centers(data, n):
-    # indexes = random.sample(range(0, len(data.index)), n)
-    # return data.reset_index().loc[indexes].reset_index(drop=True).drop('Date', axis=1)
-    indexes = np.linspace(0.1,0.9, num = n)
-    centers = pd.DataFrame()
-    for i in range(0,n):
-        center = data.quantile(q=indexes[i])
-        center['Cluster'] = i
-        centers = centers.append(center, ignore_index=True)
-    return centers.set_index('Cluster', drop=True)
-
-
-
-def mod(val):
-    return math.fabs(val)
-
-
-def get_empty_cluster_assignments(n):
-    cluster_assignment = {}
-    for i in range(0, n):
-        cluster_assignment[i] = np.array([])
-    return cluster_assignment
-
-
-def get_empty_named_cluster_assignments(n):
-    cluster_assignment = {}
-    for i in range(0, n):
-        cluster_assignment['cluster_'+str(i)] = np.array([])
-    return cluster_assignment
-
-
-def invert_data_point(data):
-    return np.array([data["percent_d"], data["rsi"], mod(data["percent_r"])])
-
-
-def reassign_cluster_center(data, clusters, cluster_centers):
-    for cluster in clusters:
-        cluster_data = data.loc[clusters[cluster]]
-        cluster_centers.loc[cluster] = cluster_data.mean()
-
-
-def find_cluster_convergence(old_clusters, new_clusters):
-    convergence_reached = np.zeros(len(old_clusters), dtype=bool)
-    for i in range(0, len(old_clusters)):
-        difference = np.setdiff1d(old_clusters[i], new_clusters[i])
-        if (float(len(difference)) <= 0.02 * len(old_clusters[i])):
-            convergence_reached[i] = True
-    print(convergence_reached)
-    return np.all(convergence_reached)
-
-
-def cluster_data(data, n):
-    cluster_centers = get_initial_centers(data, n)
-    old_clusters = clustering_iteration(data, cluster_centers, n)
-    for i in range(0, MAX_CLUSTER_ITERATIONS):
-        print('Iteration ' , i)
-        reassign_cluster_center(data, old_clusters, cluster_centers)
-        new_clusters = clustering_iteration(data, cluster_centers, n)
-        if (i == (MAX_CLUSTER_ITERATIONS - 1)):
-            return [new_clusters, cluster_centers]
-        if (not find_cluster_convergence(old_clusters, new_clusters)):
-            old_clusters = new_clusters
-        else:
-            return [new_clusters, cluster_centers]
-
-
-def clustering_iteration(data, centers, n):
-    cluster_assigment = get_empty_cluster_assignments(n)
-    for index in data.index:
-        distance_vector = np.full((n), np.inf)
-        for i in range(0, len(centers)):
-            center = centers.loc[i]
-            data_point = data.loc[index]
-            distance_vector[i] = np.linalg.norm(center - data_point)
-        cluster_assigned = np.argmin(distance_vector)
-        cluster_assigment[cluster_assigned] = np.append(cluster_assigment[cluster_assigned], index)
-    return cluster_assigment
-
-
-
-def assign_out_of_sample_clusters(data_point, centers):
-    distance_vector = pd.Series(np.full((len(centers.index)), np.inf), index = centers.index)
-    for cluster in centers.index:
-        center = centers.loc[cluster]
-        distance_vector.loc[cluster] = np.linalg.norm(center - data_point)
-    print(distance_vector)
-    return distance_vector.idxmin()
-
-def parseDate1(date):
-    date = date.replace("  "," ").replace(" ","").upper()
-    return datetime.datetime.strptime(date, "%b%d%Y").date()
-
-
-def parseDate2(date):
-    return datetime.datetime.strptime(date, '%Y-%m-%d').date()
-
-
-combined_data = pd.read_csv('SampledData.csv')
-combined_data.Date = combined_data.Date.apply(parseDate2)
-combined_data = combined_data.pivot_table(values='Price', index='Date', columns='Series')
-combined_data.sort_index(inplace=True)
-print(combined_data)
-# combined_data = -1 * combined_data.pct_change(periods=50)
-# combined_data.to_csv('ForwardLookingReturns.csv')
-two_year_average = combined_data.rolling(window=100).agg(np.mean)
-two_month_average = combined_data.rolling(window=16).agg(np.mean)
-momentum = ((two_month_average - two_year_average)/two_year_average).dropna()
-momentum.to_csv('DataNormalised_November.csv')
+# combined_data = pd.read_csv('SampledData.csv')
+# combined_data.Date = combined_data.Date.apply(parseDate2)
+# combined_data = combined_data.pivot_table(values='Price', index='Date', columns='Series')
+# combined_data.sort_index(inplace=True)
+# print(combined_data)
+# # combined_data = -1 * combined_data.pct_change(periods=50)
+# # combined_data.to_csv('ForwardLookingReturns.csv')
+# two_year_average = combined_data.rolling(window=100).agg(np.mean)
+# two_month_average = combined_data.rolling(window=16).agg(np.mean)
+# momentum = ((two_month_average - two_year_average)/two_year_average).dropna()
+# momentum.to_csv('DataNormalised_November.csv')
 # # momentum.plot()
 # # axes = plt.gca()
 # # axes.set_ylim([-1, 1])
@@ -143,48 +36,43 @@ momentum.to_csv('DataNormalised_November.csv')
 #         series['Date'] = date
 #         cluster_df = cluster_df.append(series, ignore_index=True)
 
-cluster_df = pd.read_csv('ClustersValidation.csv')
-cluster_df.set_index('Date', inplace=True)
-# cluster_data = cluster_df.join(momentum, how='inner')
-# cluster_df = cluster_df.join(momentum, how='inner',rsuffix='momentum')
-# cluster_data.to_csv('ClustersTotal_October.csv')
-# centers.to_csv('CentersTotal_October.csv')
-
-# in_sample = momentum[momentum.index < parseDate("01/01/2015")]
-# clustered_data = cluster_data[cluster_data.index <  parseDate("01/01/2015")]
-# centers = clustered_data.groupby('Cluster').mean()
-centers = cluster_df.groupby('Cluster').mean()
-
-out_sample = momentum[momentum.index >= parseDate("07/01/2019")]
-out_sample = out_sample.sort_index()
-clusters = get_empty_named_cluster_assignments(len(centers.index))
-# for date in in_sample.index:
-#     cluster = cluster_df.loc[date]['Cluster']
+# cluster_df = pd.read_csv('ClustersValidation.csv')
+# cluster_df.set_index('Date', inplace=True)
+# # in_sample = momentum[momentum.index < parseDate("01/01/2015")]
+# # clustered_data = cluster_data[cluster_data.index <  parseDate("01/01/2015")]
+# # centers = clustered_data.groupby('Cluster').mean()
+# centers = cluster_df.groupby('Cluster').mean()
+#
+# out_sample = momentum[momentum.index >= parseDate("07/01/2019")]
+# out_sample = out_sample.sort_index()
+# clusters = get_empty_named_cluster_assignments(len(centers.index))
+# # for date in in_sample.index:
+# #     cluster = cluster_df.loc[date]['Cluster']
+# #     clusters[cluster] = np.append(clusters[cluster], date)
+#
+# print(centers)
+# for date in out_sample.index:
+#     data_point = out_sample.loc[date]
+#     print(date)
+#     cluster = assign_out_of_sample_clusters(data_point, centers)
+#     # in_sample = in_sample.append(data_point)
 #     clusters[cluster] = np.append(clusters[cluster], date)
-
-print(centers)
-for date in out_sample.index:
-    data_point = out_sample.loc[date]
-    print(date)
-    cluster = assign_out_of_sample_clusters(data_point, centers)
-    # in_sample = in_sample.append(data_point)
-    clusters[cluster] = np.append(clusters[cluster], date)
-#     reassign_cluster_center(in_sample, clusters, centers)
-#
-#
-cluster_df = pd.DataFrame()
-for cluster in clusters:
-    for date in clusters[cluster]:
-        series = pd.Series()
-        series['Cluster'] = str(cluster)
-        series['Date'] = date
-        cluster_df = cluster_df.append(series, ignore_index=True)
-#
-cluster_df.set_index('Date', inplace=True)
-cluster_data = cluster_df.join(momentum, how='inner')
-# cluster_df = cluster_df.join(momentum, how='inner',rsuffix='momentum')
-cluster_data.to_csv('ClustersValidation_November.csv')
-centers.to_csv('CentersValidation_November.csv')
+# #     reassign_cluster_center(in_sample, clusters, centers)
+# #
+# #
+# cluster_df = pd.DataFrame()
+# for cluster in clusters:
+#     for date in clusters[cluster]:
+#         series = pd.Series()
+#         series['Cluster'] = str(cluster)
+#         series['Date'] = date
+#         cluster_df = cluster_df.append(series, ignore_index=True)
+# #
+# cluster_df.set_index('Date', inplace=True)
+# cluster_data = cluster_df.join(momentum, how='inner')
+# # cluster_df = cluster_df.join(momentum, how='inner',rsuffix='momentum')
+# cluster_data.to_csv('ClustersValidation_November.csv')
+# centers.to_csv('CentersValidation_November.csv')
 
 
 #
@@ -206,26 +94,30 @@ centers.to_csv('CentersValidation_November.csv')
 #     return cfd
 #
 #
-# clusters = pd.read_csv('ClustersValidation.csv', index_col=[0]).sort_index()
-# print(clusters)
-# cluster_names = clusters.Cluster.unique()
-# cluster_time = {}
-# for cluster in cluster_names:
-#     cluster_time[cluster] = np.array([])
-#
-# previous_cluster = clusters.iloc[0]['Cluster']
-# ctr = 1
-# for index in clusters.index:
-#     current_cluster = clusters.loc[index]['Cluster']
-#     if current_cluster != previous_cluster:
-#         if ctr >= 4:
-#             cluster_time[previous_cluster] = np.append(cluster_time[previous_cluster], ctr)
-#         ctr=1
-#         previous_cluster = current_cluster
-#     else:
-#         ctr+=1
-#
-# print(cluster_time)
+from DateParseres import parse_excel_date
+
+clusters = pd.read_csv('/Users/ashwin/PycharmProjects/RecessionPrediction/processed-data/ClustersValidation.csv')
+clusters.Date = clusters.Date.apply(parse_excel_date)
+clusters = clusters.set_index('Date').sort_index()
+print(clusters)
+cluster_names = clusters.Cluster.unique()
+cluster_time = {}
+for cluster in cluster_names:
+    cluster_time[cluster] = np.array([])
+
+previous_cluster = clusters.iloc[0]['Cluster']
+ctr = 1
+for index in clusters.index:
+    current_cluster = clusters.loc[index]['Cluster']
+    if current_cluster != previous_cluster:
+        if ctr >= 4:
+            cluster_time[previous_cluster] = np.append(cluster_time[previous_cluster], ctr)
+        ctr=1
+        previous_cluster = current_cluster
+    else:
+        ctr+=1
+
+print(cluster_time)
 #
 # for cluster in cluster_time:
 #     print(cluster, np.mean(cluster_time[cluster]), np.std(cluster_time[cluster]))

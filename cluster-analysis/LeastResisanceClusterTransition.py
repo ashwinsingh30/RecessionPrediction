@@ -20,11 +20,11 @@ def parse_date(date):
     return datetime.datetime.strptime(date, '%Y-%m-%d').date()
 
 # centers = pd.read_csv('/Users/ashwin/PycharmProjects/ResearchPaper/RecessionaryCenters.csv', index_col=[0])
-clusters = pd.read_csv('ClustersValidation.csv')
+clusters = pd.read_csv('/Users/ashwin/PycharmProjects/RecessionPrediction/processed-data/Clusters_January.csv')
 clusters.Date = clusters.Date.apply(parseDate)
 clusters.set_index('Date', inplace=True)
 cluster_series = clusters['Cluster']
-raw_data = pd.read_csv('DataNormalised_November.csv')
+raw_data = pd.read_csv('/Users/ashwin/PycharmProjects/RecessionPrediction/processed-data/DataNormalised_January.csv')
 raw_data.Date = raw_data.Date.apply(parse_date)
 raw_data.set_index('Date', inplace=True)
 

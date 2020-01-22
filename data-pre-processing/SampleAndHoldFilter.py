@@ -10,7 +10,7 @@ def parseDate(date):
 
 
 def get_fred_data_as_df(combined_data, series_name, file_name):
-    path = '/Users/ashwin/PycharmProjects/ResearchPaper/RawData/NovemberData/' + file_name
+    path = '/Users/ashwin/PycharmProjects/RecessionPrediction/raw-data/DecemberData/' + file_name
     print(pd.read_csv(path))
     data = pd.read_csv(path)[['Date', 'Price']]
     # data.Date = data.Date.apply(parseDate)
@@ -60,8 +60,8 @@ def latest_sample(data, date):
     return data.sort_values('Date', ascending=False).drop_duplicates(subset='Series')
 
 
-start_date = parseDate('2019-06-06')
-end_date = parseDate('2019-11-28')
+start_date = parseDate('2019-11-28')
+end_date = parseDate('2020-01-13')
 next_date = start_date
 sample = pd.DataFrame()
 while next_date <= end_date:
@@ -73,4 +73,4 @@ while next_date <= end_date:
     next_date = next_date + relativedelta(days = 7)
 
 
-sample.to_csv('/Users/ashwin/PycharmProjects/ResearchPaper/RawData/NovemberData/SampledData_November.csv', index=False)
+sample.to_csv('/Users/ashwin/PycharmProjects/RecessionPrediction/raw-data/DecemberData/SampledData_December.csv', index=False)
